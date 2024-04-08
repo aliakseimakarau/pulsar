@@ -207,8 +207,10 @@ pub enum Payload {
     },
     Fork {
         ppid: i32,
+        exe_inode: u64,
     },
     Exec {
+        exe_inode: u64,
         filename: String,
         argc: usize,
         argv: Argv,
@@ -298,8 +300,8 @@ impl fmt::Display for Payload {
             Payload::FileLink { source, destination, hard_link } => write!(f,"File Link {{ source: {source}, destination: {destination}, hard_link: {hard_link} }}"),
             Payload::FileRename { source, destination } => write!(f,"File Rename {{ source: {source}, destination {destination} }}"),
             Payload::ElfOpened { filename, flags } => write!(f,"Elf Opened {{ filename: {filename}, flags: {flags} }}"),
-            Payload::Fork { ppid } => write!(f,"Fork {{ ppid: {ppid} }}"),
-            Payload::Exec { filename, argc, argv } => write!(f,"Exec {{ filename: {filename}, argc: {argc}, argv: {argv} }}"),
+            Payload::Fork { ppid, exe_inode } => write!(f,"Fork {{ ppid: {ppid}, exe_inode: {exe_inode} }}"),
+            Payload::Exec { exe_inode, filename, argc, argv } => write!(f,"Exec {{ exe_inode: {exe_inode}, filename: {filename}, argc: {argc}, argv: {argv} }}"),
             Payload::Exit { exit_code } => write!(f,"Exit {{ exit_code: {exit_code} }}"),
             Payload::ChangeParent { ppid } => write!(f,"Parent changed {{ ppid: {ppid} }}"),
             Payload::CgroupCreated { cgroup_path, cgroup_id } => write!(f,"Cgroup created {{ cgroup_path: {cgroup_path}, cgroup_id: {cgroup_id} }}"),

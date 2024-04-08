@@ -74,11 +74,13 @@ pub enum ProcessEvent {
     Fork {
         uid: Uid,
         ppid: Pid,
+        exe_inode: u64,
         namespaces: Namespaces,
         c_container_id: COption<CContainerId>,
     },
     Exec {
         uid: Uid,
+        exe_inode: u64,
         filename: BufferIndex<str>,
         argc: u32,
         argv: BufferIndex<str>, // 0 separated strings
@@ -158,6 +160,7 @@ pub mod pulsar {
                         ppid,
                         namespaces,
                         ref c_container_id,
+                        ..
                     } => {
                         let container_id = match c_container_id {
                             COption::Some(ccid) => {
@@ -187,6 +190,7 @@ pub mod pulsar {
                         ref argv,
                         namespaces,
                         ref c_container_id,
+                        ..
                     } => {
                         let argv =
                             extract_parameters(argv.bytes(&event.buffer).unwrap_or_else(|err| {
@@ -266,15 +270,20 @@ pub mod pulsar {
                 payload, buffer, ..
             } = event;
             Ok(match payload {
-                ProcessEvent::Fork { ppid, .. } => Payload::Fork {
+                ProcessEvent::Fork {
+                    ppid, exe_inode, ..
+                } => Payload::Fork {
                     ppid: ppid.as_raw(),
+                    exe_inode,
                 },
                 ProcessEvent::Exec {
+                    exe_inode,
                     filename,
                     argc,
                     argv,
                     ..
                 } => Payload::Exec {
+                    exe_inode,
                     filename: filename.string(&buffer)?,
                     argc: argc as usize,
                     argv: extract_parameters(argv.bytes(&buffer)?).into(),

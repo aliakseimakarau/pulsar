@@ -55,6 +55,7 @@ struct fork_event
 {
   uid_t uid;
   pid_t ppid;
+  u64 exe_inode;
   struct namespaces namespaces;
   struct
   {
@@ -70,6 +71,7 @@ struct fork_event
 struct exec_event
 {
   uid_t uid;
+  u64 exe_inode;
   struct buffer_index filename;
   int argc;
   struct buffer_index argv;
@@ -255,9 +257,11 @@ int BPF_PROG(sched_process_fork, struct task_struct *parent,
     return 0;
 
   u64 uid_gid = bpf_get_current_uid_gid();
+  unsigned long exe_inode = BPF_CORE_READ(child, mm, exe_file, f_inode, i_ino);
 
   event->fork.uid = uid_gid;
   event->fork.ppid = parent_tgid;
+  event->fork.exe_inode = exe_inode;
   event->fork.namespaces.uts = BPF_CORE_READ(child, nsproxy, uts_ns, ns.inum);
   event->fork.namespaces.ipc = BPF_CORE_READ(child, nsproxy, ipc_ns, ns.inum);
   event->fork.namespaces.mnt = BPF_CORE_READ(child, nsproxy, mnt_ns, ns.inum);
@@ -305,8 +309,10 @@ int BPF_PROG(sched_process_exec, struct task_struct *p, pid_t old_pid,
   event->exec.argc = BPF_CORE_READ(bprm, argc);
 
   u64 uid_gid = bpf_get_current_uid_gid();
+  unsigned long exe_inode = BPF_CORE_READ(p, mm, exe_file, f_inode, i_ino);
 
   event->exec.uid = uid_gid;
+  event->exec.exe_inode = exe_inode;
   event->exec.namespaces.uts = BPF_CORE_READ(p, nsproxy, uts_ns, ns.inum);
   event->exec.namespaces.ipc = BPF_CORE_READ(p, nsproxy, ipc_ns, ns.inum);
   event->exec.namespaces.mnt = BPF_CORE_READ(p, nsproxy, mnt_ns, ns.inum);
